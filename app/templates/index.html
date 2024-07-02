@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Random User Generator</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div id="user-info">
+        <button onclick="fetchRandomUser()">Get Random User</button>
+        <div id="user-details"></div>
+    </div>
+    <script>
+        async function fetchRandomUser() {
+            const response = await fetch('/random_user');
+            const data = await response.json();
+            const user = data.results[0];
+
+            document.getElementById('user-details').innerHTML = `
+                <p><strong>Name:</strong> ${user.name.first} ${user.name.last}</p>
+                <p><strong>Email:</strong> ${user.email}</p>
+                <p><strong>Phone:</strong> ${user.phone}</p>
+                <p><strong>Location:</strong> ${user.location.city}, ${user.location.country}</p>
+                <img src="${user.picture.large}" alt="User Picture">
+            `;
+        }
+    </script>
+</body>
+</html>
