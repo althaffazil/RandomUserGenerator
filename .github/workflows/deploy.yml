@@ -57,6 +57,10 @@ jobs:
           # Pull the latest image from Docker Hub
           docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/random_user_generator-web:latest
           
+          # Remove any existing stack
+          docker stack rm random_user_generator || true
+          docker system prune -f
+          
           # Deploy the docker stack
           docker stack deploy -c ~/docker-stack.yml random_user_generator
           
