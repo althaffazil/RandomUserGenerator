@@ -65,8 +65,10 @@ jobs:
           # Initialize Docker Swarm if it's not already initialized
           docker swarm init || true
           
+          export DOCKER_HUB_USERNAME=${{ secrets.DOCKER_HUB_USERNAME }}
+          
           # Pull the latest image from Docker Hub
-          docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/random_user_generator-web:latest
+          docker pull \$DOCKER_HUB_USERNAME/random_user_generator-web:latest
           
           # Remove any existing stack
           docker stack rm random_user_generator || true
