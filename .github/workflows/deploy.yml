@@ -42,8 +42,15 @@ jobs:
           chmod 600 ~/ec2-key.pem
 
       - name: Deploy to EC2
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          EC2_HOST: ${{ secrets.EC2_HOST }}
         run: |
+          scp -o StrictHostKeyChecking=no -i ~/ec2-key.pem docker-compose.yml ubuntu@${{ secrets.EC2_HOST }}:~/docker-compose.yml
+          scp -o StrictHostKeyChecking=no -i ~/ec2-key.pem docker-stack.yml ubuntu@${{ secrets.EC2_HOST }}:~/docker-stack.yml
           ssh -o StrictHostKeyChecking=no -i ~/ec2-key.pem ubuntu@${{ secrets.EC2_HOST }} << EOF
+          
           # Initialize Docker Swarm if it's not already initialized
           docker swarm init || true
           
@@ -51,7 +58,7 @@ jobs:
           docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/random_user_generator-web:latest
           
           # Deploy the docker stack
-          docker stack deploy docker-stack.yml random_user_generator-web:latest
+          docker stack deploy -c ~/docker-stack.yml random_user_generator-web:latest
           
           #Checking swarm status
           docker stack services random_user_generator-web:latest
