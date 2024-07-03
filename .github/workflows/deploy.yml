@@ -61,7 +61,7 @@ jobs:
           docker stack deploy -c ~/docker-stack.yml random_user_generator
           
           #Checking swarm status
-          docker stack services random_user_generator-web
+          docker stack services random_user_generator
           
           # Checking service logs for debugging
           docker service logs random_user_generator
