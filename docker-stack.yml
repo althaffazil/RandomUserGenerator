@@ -4,7 +4,7 @@ services:
   web:
     image: ${{ secrets.DOCKER_HUB_USERNAME }}/random_user_generator-web:latest
     ports:
-      - "80:5000"
+      - "5000:5000"
     deploy:
       replicas: 2
       update_config:
