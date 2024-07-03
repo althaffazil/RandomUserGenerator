@@ -19,20 +19,23 @@ jobs:
       - name: Login to Docker Hub
         uses: docker/login-action@v1
         with:
-          username: ${{ secrets.DOCKER_HUB_USERNAME }}
-          password: ${{ secrets.DOCKER_HUB_PASSWORD }}
+          username: ${{secrets.DOCKER_HUB_USERNAME}}
+          password: ${{secrets.DOCKER_HUB_PASSWORD}}
 
-      - name: Build and push Docker image
+      - name: Build and push docker image
         run: |
           docker compose -f docker-compose.yml build
-          docker tag random_user_generator-web:latest ${{ secrets.DOCKER_HUB_USERNAME }}/random_user_generator-web:latest
-          docker push ${{ secrets.DOCKER_HUB_USERNAME }}/random_user_generator-web:latest
+          docker tag random_user_generator-web:latest ${{secrets.DOCKER_HUB_USERNAME}}/random_user_generator-web:latest
+          docker push ${{secrets.DOCKER_HUB_USERNAME}}/random_user_generator-web:latest
 
   deploy:
     runs-on: ubuntu-latest
     needs: build
 
     steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+
       - name: Setup SSH
         run: |
           echo "${{ secrets.EC2_SSH_KEY }}" | base64 --decode > ~/ec2-key.pem
@@ -44,37 +47,46 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           EC2_HOST: ${{ secrets.EC2_HOST }}
         run: |
-          # Upload docker-compose.yml and docker-stack.yml to the EC2 instance
           scp -o StrictHostKeyChecking=no -i ~/ec2-key.pem docker-compose.yml ubuntu@${{ secrets.EC2_HOST }}:~/docker-compose.yml
           scp -o StrictHostKeyChecking=no -i ~/ec2-key.pem docker-stack.yml ubuntu@${{ secrets.EC2_HOST }}:~/docker-stack.yml
-
-          # Connect to the EC2 instance and deploy the Docker stack
           ssh -o StrictHostKeyChecking=no -i ~/ec2-key.pem ubuntu@${{ secrets.EC2_HOST }} << EOF
-            # Ensure Docker is running
-            sudo systemctl start docker
-            sudo systemctl enable docker
+          
+          
+          # Ensure Docker is running
+          sudo systemctl start docker
+          sudo systemctl enable docker
 
-            # Leave Docker Swarm and Clean Up
-            docker stack rm random_user_generator || true
-            docker service rm \$(docker service ls -q) || true
-            docker swarm leave --force || true
-            docker system prune -f --volumes || true
+          # Leave Docker Swarm and Clean Up
+          docker stack rm random_user_generator || true
+          docker service rm \$(docker service ls -q) || true
+          docker swarm leave --force || true
+          docker system prune -f --volumes || true
+          
+          # Initialize Docker Swarm if it's not already initialized
+          docker swarm init || true
+          
+          # Pull the latest image from Docker Hub
+          docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/random_user_generator-web:latest
+          
+          # Remove any existing stack
+          docker stack rm random_user_generator || true
+          docker system prune -f
+          
+          # Deploy the docker stack
+          docker stack deploy -c ~/docker-stack.yml random_user_generator
+          
+          #Checking swarm status
+          docker stack services random_user_generator
+          
+          # Checking service logs for debugging
+          docker service logs random_user_generator
 
-            # Initialize Docker Swarm if needed
-            docker swarm init || true
+          # Optionally, check the Docker Compose configuration
+          docker-compose -f ~/docker-compose.yml config
 
-            # Export the Docker Hub username
-            export DOCKER_HUB_USERNAME=${{ secrets.DOCKER_HUB_USERNAME }}
-
-            # Pull the latest image from Docker Hub
-            docker pull \$DOCKER_HUB_USERNAME/random_user_generator-web:latest
-            
-            # Deploy the Docker Stack
-            docker stack deploy -c ~/docker-stack.yml random_user_generator
-
-            # Check the status of the stack
-            docker stack services random_user_generator
-
-            # Check the logs of the web service for debugging
-            docker service logs random_user_generator_web || true
+          # Optionally, check the Docker Compose version
+          docker-compose --version
+          
           EOF
+          
+          
