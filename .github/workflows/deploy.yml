@@ -44,8 +44,11 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           EC2_HOST: ${{ secrets.EC2_HOST }}
         run: |
+          # Upload docker-compose.yml and docker-stack.yml to the EC2 instance
           scp -o StrictHostKeyChecking=no -i ~/ec2-key.pem docker-compose.yml ubuntu@${{ secrets.EC2_HOST }}:~/docker-compose.yml
           scp -o StrictHostKeyChecking=no -i ~/ec2-key.pem docker-stack.yml ubuntu@${{ secrets.EC2_HOST }}:~/docker-stack.yml
+
+          # Connect to the EC2 instance and deploy the Docker stack
           ssh -o StrictHostKeyChecking=no -i ~/ec2-key.pem ubuntu@${{ secrets.EC2_HOST }} << EOF
             # Ensure Docker is running
             sudo systemctl start docker
@@ -60,8 +63,11 @@ jobs:
             # Initialize Docker Swarm if needed
             docker swarm init || true
 
+            # Export the Docker Hub username
+            export DOCKER_HUB_USERNAME=${{ secrets.DOCKER_HUB_USERNAME }}
+
             # Pull the latest image from Docker Hub
-            docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/random_user_generator-web:latest
+            docker pull \$DOCKER_HUB_USERNAME/random_user_generator-web:latest
             
             # Deploy the Docker Stack
             docker stack deploy -c ~/docker-stack.yml random_user_generator
@@ -71,10 +77,4 @@ jobs:
 
             # Check the logs of the web service for debugging
             docker service logs random_user_generator_web || true
-
-            # Optionally, check the Docker Compose configuration
-            docker-compose -f ~/docker-compose.yml config || true
-
-            # Optionally, check the Docker Compose version
-            docker-compose --version
           EOF
