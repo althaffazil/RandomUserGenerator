@@ -51,10 +51,10 @@ jobs:
           docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/random_user_generator-web:latest
           
           # Deploy the docker stack
-          docker stack deploy -c ~/docker-stack.yml random_user_generator-web:latest
+          docker stack deploy docker-stack.yml random_user_generator-web:latest
           
           #Checking swarm status
-          docker stack service random_user_generator-web:latest
+          docker stack services random_user_generator-web:latest
           
           EOF
           
