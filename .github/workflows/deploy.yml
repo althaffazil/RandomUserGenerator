@@ -58,10 +58,19 @@ jobs:
           docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/random_user_generator-web:latest
           
           # Deploy the docker stack
-          docker stack deploy -c ~/docker-stack.yml random_user_generator-web:latest
+          docker stack deploy -c ~/docker-stack.yml random_user_generator
           
           #Checking swarm status
-          docker stack services random_user_generator-web:latest
+          docker stack services random_user_generator-web
+          
+          # Checking service logs for debugging
+          docker service logs random_user_generator
+
+          # Optionally, check the Docker Compose configuration
+          docker-compose -f ~/docker-compose.yml config
+
+          # Optionally, check the Docker Compose version
+          docker-compose --version
           
           EOF
           
