@@ -20,7 +20,7 @@ Random User Generator is a Flask application that generates random user data usi
 
 1. **Clone the repository:**
     ```bash
-    git clone https://github.com/althaffazil/random-user-generator.git
+    git clone https://github.com/althaffazil/RandomUserGenerator.git
     cd random-user-generator
     ```
 
